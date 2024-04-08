@@ -101,6 +101,9 @@ namespace picEncoder.Items
 		//Right click usage
 		public override bool AltFunctionUse(Player player)
 		{
+  			// don't know where to put this, so I'm putting it here
+	 		if(!didFindColors) findClosestColors();
+	
 			var sortedPaths = files.OrderBy(path => int.Parse(System.IO.Path.GetFileNameWithoutExtension(path).Substring("reformatted".Length)));
 			files = sortedPaths.ToArray();
 			if(MODE != 2)
@@ -246,7 +249,8 @@ namespace picEncoder.Items
 					//luminanceRank = calculateLuminance(colorsArray[pixelIndex,0], colorsArray[pixelIndex, 1], colorsArray[pixelIndex, 2]);
 					//PlaceCustomBlock((int)player.Center.X / 16 + x, (int)player.Center.Y / 16 + y, customTileIDs[luminanceRank]);
 
-					blockToPlace = findClosestColor(colorsArray[pixelIndex, 0], colorsArray[pixelIndex, 1], colorsArray[pixelIndex, 2]);
+	 				// use our precomputed value :smile:
+					blockToPlace = closestColors[toColorIndex(colorsArray[pixelIndex, 0], colorsArray[pixelIndex, 1], colorsArray[pixelIndex, 2])];
 					PlaceCustomBlock((int)player.Center.X / 16 + x - (width/2), (int)player.Center.Y / 16 + y - (height/2), blockToPlace);
 					RevealAroundPoint((int)player.Center.X / 16 + x - (width / 2), (int)player.Center.Y / 16 + y - (height / 2));
 					pixelIndex++;
@@ -270,7 +274,22 @@ namespace picEncoder.Items
 			Main.refreshMap = true;
 		}
 
-
+  		public static bool didFindColors = false;
+		public static ushort[] closestColors = new ushort[1<<24];
+		public static int toColorIndex(int r, int g, int b){
+  			return r<<24 & g<<16 & b;
+		}
+		public static void findClosestColors(){
+  			// we call this caching - the idea it compute everything ahead of time
+  			for(int r = 0; r < 256; r++){
+  			 for(int g = 0; g < 256; g++){
+  			  for(int b = 0; b < 256; b++){
+	 			closestColors[toColorIndex(r,g,b)] = findClosestColor(r,g,b);
+			  }
+   			 }
+   			}
+	    	didFindColors = false;
+		}
 		public static ushort findClosestColor(int r, int g, int b)
 		{
 			ushort closestColor = 0;
